@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>登陆WebChat</title>
+        <link href="/static/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+        <link href="/static/font-awesome/css/font-awesome.css" type="text/css" rel="stylesheet" />
+        <link href="/static/css/plugins/toastr/toastr.min.css" type="text/css" rel="stylesheet" />
+        <link href="/static/css/style.css" type="text/css" rel="stylesheet" />
+        <link href="/static/css/animate.css" type="text/css" rel="stylesheet" />
+        <link href="/static/css/style.css" type="text/css" rel="stylesheet" />
+    </head>
+    <body class="gray-bg">
+        <div class="middle-box text-center loginscreen animated fadeInDown">
+            <div>
+                <h2>WebChat 登陆</h2>
+                <form class="form-horizontal" id="form-login">
+                    <div class="form-group">
+                        <div class="col-sm-12">
+                            <input type="email" class="form-control" placeholder="邮箱" name="email" required="">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-7">
+                            <input type="text" class="form-control" placeholder="验证码" name="code" required="">
+                        </div>
+                        <div class="col-md-5">
+                            <button type="button" id="btn-code" class="btn btn-primary block full-width m-b">发送验证码</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-12">
+                            <button type="button" id="btn-login" class="btn btn-primary block full-width m-b">登陆</button>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <script type="text/javascript" src="/static/js/jquery-2.1.1.js"></script>
+        <script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="/static/js/plugins/toastr/toastr.min.js"></script>
+
+        <script type="text/javascript">
+            jQuery(document).ready(function() {
+                toastr.options = {
+                    "closeButton": true,
+                    "debug": false,
+                    "progressBar": true,
+                    "positionClass": "toast-top-center",
+                    "onclick": null,
+                    "showDuration": "400",
+                    "hideDuration": "1000",
+                    "timeOut": "7000",
+                    "extendedTimeOut": "1000",
+                    "showEasing": "swing",
+                    "hideEasing": "linear",
+                    "showMethod": "fadeIn",
+                    "hideMethod": "fadeOut"
+                };
+
+                jQuery('#btn-code').on("click", function() {
+                    var that = jQuery(this);
+                    var datas = jQuery("#form-login").serializeArray();
+
+                    that.attr("disabled", true);
+                    jQuery.post({{ urlfor "UserController.Code" }}, datas, function(response) {
+                        toastr.clear();
+                        switch(response['code']) {
+                            case 200:
+                                toastr['success']("发送验证码成功, 请查收邮件, 并使用验证码登录");
+                                var time = 60;
+                                var th = setInterval(function() {
+                                    time -= 1;
+                                    that.text(time + "秒");
+                                    if(time <= 0) {
+                                        clearInterval(th);
+                                        th = null;
+                                        that.text("发送验证码");
+                                        that.attr("disabled", false);
+                                    }
+                                }, 1000);
+                                break;
+                            default:
+                                toastr['error']("发送验证码失败, 请检查邮箱信息");
+                                that.attr("disabled", false);
+                                break;
+                        }
+                    }, 'json');
+                });
+
+                jQuery('#btn-login').on("click", function() {
+                    var that = jQuery(this);
+                    that.attr("disabled", true);
+                    var datas = jQuery("#form-login").serializeArray();
+                    jQuery.post({{ urlfor "UserController.Login" }}, datas, function(response) {
+                        that.attr("disabled", false);
+                        toastr.clear();
+                        switch(response['code']) {
+                            case 200:
+                                toastr['success']("登陆成功");
+                                setTimeout(function() {
+                                    window.location.replace({{ urlfor "HomeController.Get" }});
+                                }, 3000)
+                                break;
+                            default:
+                                toastr['error']("用户名或验证码错误");
+                                break;
+                        }
+                    }, 'json');
+                });
+            });
+        </script>
+    </body>
+</html>
